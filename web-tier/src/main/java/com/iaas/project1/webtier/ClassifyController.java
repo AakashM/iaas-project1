@@ -11,6 +11,6 @@ public class ClassifyController {
     @RequestMapping("/")
     public String classify(@RequestParam("myfile") MultipartFile file) {
         System.out.println("Received file: " + file.getOriginalFilename());
-        return "Hello World from Spring Boot";
+        return "Unknown";
     }
 }
