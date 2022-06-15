@@ -8,7 +8,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Component
@@ -27,7 +32,7 @@ public class ConsoleApp implements CommandLineRunner {
             for (Message message : messages) {
                 logger.info("Message RequestId: {}", message.getMessageAttributes().get("RequestId").getStringValue());
                 String messageBody = message.getBody();
-                logger.info("Message body: {}", messageBody);
+                //logger.info("Message body: {}", messageBody);
 
                 JsonNode node = new ObjectMapper().readTree(messageBody);
                 var filename = node.get("filename").asText();
@@ -41,7 +46,22 @@ public class ConsoleApp implements CommandLineRunner {
         }
     }
 
-    private String classify(String filename, byte[] filebytes) {
-        return "Unknown";
+    private String classify(String filename, byte[] filebytes) throws IOException {
+        Path path = Paths.get("/tmp/"+filename);
+        Files.write(path, filebytes);
+
+        Runtime rt = Runtime.getRuntime();
+        Process pr = rt.exec("python3 image_classification.py "+path);
+
+        BufferedReader input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+        String line = null;
+
+        try {
+            line = input.readLine();
+            return line.split(",")[1];
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "ERROR";
+        }
     }
 }

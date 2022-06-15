@@ -6,10 +6,14 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class SqsReceiver {
@@ -34,8 +38,18 @@ public class SqsReceiver {
     }
 
     public void sendResponse(String response, Message message) {
-        // Send response then delete
+        var requestId = message.getMessageAttributes().get("RequestId").getStringValue();
 
+        final Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
+        messageAttributes.put("RequestId", new MessageAttributeValue().withDataType("String").withStringValue(requestId));
+
+        SendMessageRequest send_msg_request = new SendMessageRequest()
+                .withQueueUrl(awsProperties.responseQueueUrl())
+                .withMessageBody(response)
+                .withMessageAttributes(messageAttributes);
+        sqs.sendMessage(send_msg_request);
+
+        // Send response then delete
         sqs.deleteMessage(awsProperties.requestQueueUrl(), message.getReceiptHandle());
     }
 }
