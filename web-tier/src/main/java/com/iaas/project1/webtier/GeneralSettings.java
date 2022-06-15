@@ -3,9 +3,6 @@ package com.iaas.project1.webtier;
 import com.amazonaws.auth.BasicAWSCredentials;
 
 public class GeneralSettings {
-    public static final String SQS_REQUEST_URL = "https://sqs.us-east-1.amazonaws.com/124940588792/CSE546_Project1_Request";
-    public static final String SQS_RESPONSE_URL = "https://sqs.us-east-1.amazonaws.com/124940588792/CSE546_Project1_Response";
-
     public static final  String S3_InputBucket="cse546-project1-input";
     public static final  String S3_OutputBucket="cse546-project1-output";
 
