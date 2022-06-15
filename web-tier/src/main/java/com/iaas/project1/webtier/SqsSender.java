@@ -54,10 +54,10 @@ public class SqsSender {
                 logger.info("Received response: {}", message.getBody());
                 if(future == null) {
                     logger.warn("Got no pending request for {}" + requestId);
-                    continue;
+                } else {
+                    future.complete(message.getBody());
                 }
 
-                future.complete(message.getBody());
                 sqs.deleteMessage(awsProperties.responseQueueUrl(), message.getReceiptHandle());
             }
         }
