@@ -19,15 +19,8 @@ public class SqsReceiver {
     public SqsReceiver(AwsProperties awsProperties) {
         this.awsProperties = awsProperties;
 
-        var builder = AmazonSQSClient.builder()
-                .withCredentials(new AWSStaticCredentialsProvider(awsProperties.getAwsCredentials()));
-
-        if (awsProperties.endpoint() != null) {
-            builder = builder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(awsProperties.endpoint(), awsProperties.region()));
-        } else {
-            builder = builder.withRegion(awsProperties.region());
-        }
-
+        var builder = AmazonSQSClient.builder();
+        BuilderUtil.configureBuilder(awsProperties, builder);
         sqs = builder.build();
     }
 

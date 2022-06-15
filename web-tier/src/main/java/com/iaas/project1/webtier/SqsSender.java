@@ -5,6 +5,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
@@ -25,15 +26,8 @@ public class SqsSender {
     public SqsSender(AwsProperties awsProperties) {
         this.awsProperties = awsProperties;
 
-        var builder = AmazonSQSClient.builder()
-                .withCredentials(new AWSStaticCredentialsProvider(awsProperties.getAwsCredentials()));
-
-        if (awsProperties.endpoint() != null) {
-            builder = builder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(awsProperties.endpoint(), awsProperties.region()));
-        } else {
-            builder = builder.withRegion(awsProperties.region());
-        }
-
+        var builder = AmazonSQSClient.builder();
+        BuilderUtil.configureBuilder(awsProperties, builder);
         sqs = builder.build();
 
         logger.info("SQSSender created");
