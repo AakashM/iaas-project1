@@ -1,5 +1,7 @@
 package com.iaas.project1.webtier;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "aws")
@@ -8,6 +10,12 @@ public record AwsProperties(
         String region,
 
         String requestQueueUrl,
-        String responseQueueUrl
+        String responseQueueUrl,
+
+        String accessKey,
+        String secretKey
 ) {
+    public AWSCredentials getAwsCredentials() {
+        return new BasicAWSCredentials(accessKey, secretKey);
+    }
 }

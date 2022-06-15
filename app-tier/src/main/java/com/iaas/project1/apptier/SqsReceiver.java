@@ -1,7 +1,9 @@
 package com.iaas.project1.apptier;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
@@ -16,8 +18,17 @@ public class SqsReceiver {
 
     public SqsReceiver(AwsProperties awsProperties) {
         this.awsProperties = awsProperties;
-        AwsClientBuilder.EndpointConfiguration endpointConf = new AwsClientBuilder.EndpointConfiguration(awsProperties.endpoint(), awsProperties.region());
-        this.sqs = AmazonSQSClientBuilder.standard().withEndpointConfiguration(endpointConf).build();
+
+        var builder = AmazonSQSClient.builder()
+                .withCredentials(new AWSStaticCredentialsProvider(awsProperties.getAwsCredentials()));
+
+        if (awsProperties.endpoint() != null) {
+            builder = builder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(awsProperties.endpoint(), awsProperties.region()));
+        } else {
+            builder = builder.withRegion(awsProperties.region());
+        }
+
+        sqs = builder.build();
     }
 
     public List<Message> receiveRequest() {
