@@ -56,6 +56,7 @@ public class SqsSender {
                     logger.warn("Got no pending request for {}" + requestId);
                 } else {
                     future.complete(message.getBody());
+                    pendingRequests.remove(requestId);
                 }
 
                 sqs.deleteMessage(awsProperties.responseQueueUrl(), message.getReceiptHandle());
