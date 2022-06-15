@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 public class ClassifyController {
@@ -23,7 +24,7 @@ public class ClassifyController {
     }
 
     @RequestMapping("/")
-    public String classify(@RequestParam("myfile") MultipartFile file) throws IOException {
+    public String classify(@RequestParam("myfile") MultipartFile file) throws IOException, ExecutionException, InterruptedException {
         logger.info("Received file: {}", file.getOriginalFilename());
 
         ObjectNode object = new ObjectMapper().createObjectNode();

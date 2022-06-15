@@ -58,6 +58,7 @@ public class ConsoleApp implements CommandLineRunner {
 
         try {
             line = input.readLine();
+            logger.info("Executed py got output: {}", line);
             return line.split(",")[1];
         } catch (IOException e) {
             e.printStackTrace();
