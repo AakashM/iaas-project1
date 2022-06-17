@@ -1,7 +1,5 @@
 package com.iaas.project1.webtier;
 
-import com.amazonaws.auth.BasicAWSCredentials;
-
 public class GeneralSettings {
     public static final  String S3_InputBucket="cse546-project1-input";
     public static final  String S3_OutputBucket="cse546-project1-output";

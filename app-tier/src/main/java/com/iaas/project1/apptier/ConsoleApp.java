@@ -20,9 +20,13 @@ import java.util.List;
 public class ConsoleApp implements CommandLineRunner {
     Logger logger = LoggerFactory.getLogger(ConsoleApp.class);
     private final SqsReceiver sqsReceiver;
+    private final S3Receiver s3Receiver;
 
-    public ConsoleApp(SqsReceiver sqsReceiver) {
+    public ConsoleApp(SqsReceiver sqsReceiver, S3Receiver s3Receiver) {
+
         this.sqsReceiver = sqsReceiver;
+        this.s3Receiver = s3Receiver;
+
     }
 
     @Override
@@ -32,13 +36,13 @@ public class ConsoleApp implements CommandLineRunner {
             for (Message message : messages) {
                 logger.info("Message RequestId: {}", message.getMessageAttributes().get("RequestId").getStringValue());
                 String messageBody = message.getBody();
-                //logger.info("Message body: {}", messageBody);
+                logger.info("Message body: {}", messageBody);
 
-                JsonNode node = new ObjectMapper().readTree(messageBody);
-                var filename = node.get("filename").asText();
-                var filebytes = node.get("filebytes").binaryValue();
+                //JsonNode node = new ObjectMapper().readTree(messageBody);
+                //var filename = node.get("filename").asText();
+                //var filebytes = node.get("filebytes").binaryValue();
 
-                String output = classify(filename, filebytes);
+                String output = classify(s3Receiver.getImageFromS3(messageBody));
                 // Send response
 
                 sqsReceiver.sendResponse(output, message);
@@ -46,9 +50,9 @@ public class ConsoleApp implements CommandLineRunner {
         }
     }
 
-    private String classify(String filename, byte[] filebytes) throws IOException {
-        Path path = Paths.get("/tmp/"+filename);
-        Files.write(path, filebytes);
+    private String classify(Path path) throws IOException {
+        //Path path = Paths.get("/tmp/"+filename);
+        //Files.write(path, filebytes);
 
         Runtime rt = Runtime.getRuntime();
         Process pr = rt.exec("python3 image_classification.py "+path);

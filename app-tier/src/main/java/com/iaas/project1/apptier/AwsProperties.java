@@ -12,6 +12,8 @@ public record AwsProperties(
         String requestQueueUrl,
         String responseQueueUrl,
 
+        String inputBucket,
+        String outputBucket,
         String accessKey,
         String secretKey
 ) {

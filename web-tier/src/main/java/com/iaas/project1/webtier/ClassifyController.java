@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @RestController
@@ -18,20 +19,25 @@ public class ClassifyController {
     Logger logger = LoggerFactory.getLogger(ClassifyController.class);
 
     final SqsSender sqsSender;
-
-    public ClassifyController(SqsSender sqsSender) {
+    final S3Repository s3Repository;
+    public ClassifyController(S3Repository s3Repository, SqsSender sqsSender) {
+        this.s3Repository = s3Repository;
         this.sqsSender = sqsSender;
     }
 
     @RequestMapping("/")
-    public String classify(@RequestParam("myfile") MultipartFile file) throws IOException, ExecutionException, InterruptedException {
-        logger.info("Received file: {}", file.getOriginalFilename());
+    public List<String> classify(@RequestParam("myfile") MultipartFile[] files) throws IOException, ExecutionException, InterruptedException {
 
-        ObjectNode object = new ObjectMapper().createObjectNode();
-        object.put("filename", file.getOriginalFilename());
-        object.put("filebytes", file.getBytes());
+        List<String> s3ImagesList= s3Repository.saveMultipleImagesToS3(files);
+        //ObjectNode object = new ObjectMapper().createObjectNode();
+        //object.put("filename", file.getOriginalFilename());
+        //object.put("filebytes", file.getBytes());
 
-        var output = sqsSender.sendRequest(object.toString());
-        return output;
+        //s3Repository.saveImageToS3(file.getOriginalFilename(), file);
+        for (String imageName : s3ImagesList) {
+            var output = sqsSender.sendRequest(imageName);
+        }
+        //return output;
+        return s3ImagesList;
     }
 }
