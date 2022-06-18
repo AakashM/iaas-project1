@@ -19,15 +19,16 @@ import java.util.concurrent.ExecutionException;
 @Repository
 public class SqsSender {
     private static final Logger logger = LoggerFactory.getLogger(SqsSender.class);
-
     private final AmazonSQS sqs;
     private final AwsProperties awsProperties;
+    private final Ec2Monitor ec2Monitor;
     private final Map<String, CompletableFuture<String>> pendingRequests;
     private final Thread pollThread;
 
     //create SQS Client instance
-    public SqsSender(AwsProperties awsProperties) {
+    public SqsSender(AwsProperties awsProperties, Ec2Monitor ec2Monitor) {
         this.awsProperties = awsProperties;
+        this.ec2Monitor = ec2Monitor;
         this.pendingRequests = new ConcurrentHashMap<>();
 
         var builder = AmazonSQSClient.builder();
