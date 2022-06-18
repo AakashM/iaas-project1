@@ -46,7 +46,7 @@ public class Ec2Monitor {
                 var queueSize = sqsSender.getSqsQueueSize(); // this size is fetched from queue
                 int numOfRunningInstances = getCountOfRunningInstances();
 //                if(oldRequestsSize == 0 && queueSize > 0) {
-                    int numOfInstancesToCreate = Math.min(queueSize - numOfRunningInstances, 15);
+                    int numOfInstancesToCreate = Math.min(queueSize, 15) - numOfRunningInstances;
                     if(numOfInstancesToCreate > 0)
                         createInstances(numOfInstancesToCreate);
 //                } //else if(oldRequestsSize > 1 && queueSize == 0) {
