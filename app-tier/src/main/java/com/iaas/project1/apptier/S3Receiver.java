@@ -17,7 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,5 +50,10 @@ public class S3Receiver {
         long imageSize = Files.copy(s3InputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
         logger.info("got image from s3 {} with size {}",imageName,imageSize);
         return outputPath;
+    }
+
+    public void saveOutputToS3(String fileName, String output) throws IOException {
+        String name = fileName;
+        s3.putObject(awsProperties.outputBucket(), name, output);
     }
 }

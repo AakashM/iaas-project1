@@ -30,12 +30,10 @@ public class S3Repository {
 
     private final AmazonS3 s3;
     private final AwsProperties awsProperties;
-    private final Map<String, CompletableFuture<String>> pendingRequests;
 
     //create SQS Client instance
     public S3Repository(AwsProperties awsProperties) {
         this.awsProperties = awsProperties;
-        this.pendingRequests = new ConcurrentHashMap<>();
 
         var builder = AmazonS3Client.builder();
         BuilderUtil.configureBuilder(awsProperties, builder);

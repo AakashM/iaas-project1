@@ -33,16 +33,23 @@ public class ConsoleApp implements CommandLineRunner {
     public void run(String... args) throws IOException {
         while(true) {
             List<Message> messages = sqsReceiver.receiveRequest();
+
+            if(messages == null || messages.isEmpty()) {
+                logger.info("No messages in SQS, terminating this app-tier instance");
+                terminateThisEC2instance();
+                return;
+            }
+
             for (Message message : messages) {
-                logger.info("Message RequestId: {}", message.getMessageAttributes().get("RequestId").getStringValue());
+                //logger.info("Message RequestId: {}", message.getMessageAttributes().get("RequestId").getStringValue());
                 String messageBody = message.getBody();
-                logger.info("Message body: {}", messageBody);
+                //logger.info("Message body: {}", messageBody);
 
                 //JsonNode node = new ObjectMapper().readTree(messageBody);
                 //var filename = node.get("filename").asText();
                 //var filebytes = node.get("filebytes").binaryValue();
 
-                String output = classify(s3Receiver.getImageFromS3(messageBody));
+                String output = classify(s3Receiver.getImageFromS3(messageBody), messageBody);
                 // Send response
 
                 sqsReceiver.sendResponse(output, message);
@@ -50,7 +57,7 @@ public class ConsoleApp implements CommandLineRunner {
         }
     }
 
-    private String classify(Path path) throws IOException {
+    private String classify(Path path, String imageName) throws IOException {
         //Path path = Paths.get("/tmp/"+filename);
         //Files.write(path, filebytes);
 
@@ -63,10 +70,23 @@ public class ConsoleApp implements CommandLineRunner {
         try {
             line = input.readLine();
             logger.info("Executed py got output: {}", line);
+            s3Receiver.saveOutputToS3(imageName.replace(".JPEG","") , line);
             return line.split(",")[1];
         } catch (IOException e) {
             e.printStackTrace();
             return "ERROR";
         }
+    }
+
+    public void terminateThisEC2instance() {
+        String cmd="sudo shutdown -h now";
+
+        Runtime run = Runtime.getRuntime();
+        try {
+            Process pr = run.exec(cmd);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.exit(0);
     }
 }
