@@ -1,1 +1,1 @@
- python workload_generator.py --num_request 1 --url 'http://localhost:3000' --image_folder "imagenet-100/"
+ python workload_generator.py --num_request 5 --url 'http://3.228.132.166:3000' --image_folder "imagenet-100/"

@@ -3,17 +3,17 @@ package com.iaas.project1.webtier;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClient;
-import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 @Component
 public class Ec2Monitor {
+
+    private static final Logger logger = LoggerFactory.getLogger(Ec2Monitor.class);
     private final Thread pollThread;
     int oldRequestsSize = 0;
     private final SqsSender sqsSender;
@@ -35,6 +35,8 @@ public class Ec2Monitor {
 
         this.pollThread = new Thread(this::startMonitoringSqsQueueSize);
         this.pollThread.start();
+
+        logger.info("Ec2Monitor created");
     }
 
     private void startMonitoringSqsQueueSize() {
@@ -42,12 +44,13 @@ public class Ec2Monitor {
             // Get size from sqs queue
             try {
                 var newRequestsSize = sqsSender.getSqsQueueSize(); // this size is fetched from queue
+                int numOfRunningInstances = getCountOfRunningInstances();
                 if(oldRequestsSize == 0 && newRequestsSize > 0) {
-                    instanceId = createInstance("app-instance-"+String.valueOf(instanceNum));
-                    instanceNum = (instanceNum+1)%19 + 1;
-                } else if(oldRequestsSize > 1 && newRequestsSize == 0) {
-                    terminateInstance(instanceId);
-                }
+                    int numOfInstancesToCreate = Math.min(newRequestsSize-oldRequestsSize, 20 - numOfRunningInstances);
+                    createInstances(numOfInstancesToCreate);
+                } //else if(oldRequestsSize > 1 && newRequestsSize == 0) {
+//                    terminateInstance(instanceId);
+//                }
                 oldRequestsSize = newRequestsSize;
 
                 Thread.sleep(TimeUnit.SECONDS.toSeconds(2));
@@ -57,7 +60,21 @@ public class Ec2Monitor {
         }
     }
 
-    private String createInstance(String instanceName) {
+    private void createInstances(int numOfInstances) {
+        for(int i=0;i<numOfInstances;i++) {
+            String instanceId = createOneInstance("app-tier-"+String.valueOf(instanceNum));
+
+            //generate id between 1 and 19
+            instanceNum++;
+
+            if(instanceId == null)
+                logger.error("Failed to create instance");
+            else
+                logger.info("Created instance " + instanceId);
+        }
+    }
+
+    private String createOneInstance(String instanceName) {
         // Launch an Amazon EC2 Instance
         RunInstancesRequest runInstancesRequest = new RunInstancesRequest().withImageId(GeneralSettings.AMI_ID)
                 .withInstanceType("t2.micro")
@@ -86,13 +103,34 @@ public class Ec2Monitor {
         return instanceId;
     }
 
-    private void terminateInstance(String instanceId) {
-        TerminateInstancesRequest terminateInstancesRequest = new TerminateInstancesRequest()
-                .withInstanceIds(instanceId);
-        ec2.terminateInstances(terminateInstancesRequest)
-                .getTerminatingInstances()
-                .get(0)
-                .getPreviousState()
-                .getName();
+//    private void terminateInstance(String instanceId) {
+//        TerminateInstancesRequest terminateInstancesRequest = new TerminateInstancesRequest()
+//                .withInstanceIds(instanceId);
+//        ec2.terminateInstances(terminateInstancesRequest)
+//                .getTerminatingInstances()
+//                .get(0)
+//                .getPreviousState()
+//                .getName();
+//    }
+
+    private int getCountOfRunningInstances() {
+        DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
+
+        Filter runningInstancesFilter = new Filter();
+        runningInstancesFilter.setName("instance-state-name");
+        runningInstancesFilter.setValues(Arrays.asList(new String[] {"running", "pending"}));
+
+        describeInstancesRequest.setFilters( Arrays.asList(new Filter[] {runningInstancesFilter}));
+
+        describeInstancesRequest.setMaxResults(1000);
+
+        DescribeInstancesResult result = ec2.describeInstances(describeInstancesRequest);
+
+        int count = 0;
+        for(Reservation r : result.getReservations()) {
+            count += r.getInstances().size();
+        }
+
+        return count;
     }
 }

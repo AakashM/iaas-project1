@@ -13,7 +13,6 @@ public record AwsProperties(
         String responseQueueUrl,
 
         String inputBucket,
-        String outputBucket,
 
         String accessKey,
         String secretKey
