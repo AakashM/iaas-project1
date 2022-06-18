@@ -63,7 +63,7 @@ public class Ec2Monitor {
 
     private void createInstances(int numOfInstances) {
         for(int i=0;i<numOfInstances;i++) {
-            String instanceId = createOneInstance("app-tier-"+String.valueOf(instanceNum));
+            String instanceId = createOneInstance("app-tier-"+instanceNum);
 
             //generate id between 1 and 19
             instanceNum++;
@@ -129,7 +129,12 @@ public class Ec2Monitor {
 
         int count = 0;
         for(Reservation r : result.getReservations()) {
-            count += r.getInstances().size();
+            //count += r.getInstances().size();
+            for (Instance instance : r.getInstances()) {
+                if (instance.getTags().get(0).getValue().contains("app-tier")) {
+                    count++;
+                }
+            }
         }
 
         return count;
