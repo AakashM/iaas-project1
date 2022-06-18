@@ -7,8 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class Ec2Monitor {
@@ -20,10 +22,10 @@ public class Ec2Monitor {
     private final AwsProperties awsProperties;
     private final AmazonEC2 ec2;
 
-    private int instanceNum = 1;
+    private AtomicInteger instanceNum = new AtomicInteger(0);
 
 //    private String instanceId;
-
+    ExecutorService executor = Executors.newFixedThreadPool(15);
 
     public Ec2Monitor(SqsSender sqsSender, AwsProperties awsProperties) {
         this.sqsSender = sqsSender;
@@ -45,14 +47,9 @@ public class Ec2Monitor {
             try {
                 var queueSize = sqsSender.getSqsQueueSize(); // this size is fetched from queue
                 int numOfRunningInstances = getCountOfRunningInstances();
-//                if(oldRequestsSize == 0 && queueSize > 0) {
                     int numOfInstancesToCreate = Math.min(queueSize, 15) - numOfRunningInstances;
                     if(numOfInstancesToCreate > 0)
                         createInstances(numOfInstancesToCreate);
-//                } //else if(oldRequestsSize > 1 && queueSize == 0) {
-//                    terminateInstance(instanceId);
-//                }
-//                oldRequestsSize = queueSize;
 
                 Thread.sleep(TimeUnit.SECONDS.toSeconds(2));
             } catch (InterruptedException e) {
@@ -62,16 +59,25 @@ public class Ec2Monitor {
     }
 
     private void createInstances(int numOfInstances) {
-        for(int i=0;i<numOfInstances;i++) {
-            String instanceId = createOneInstance("app-tier-"+instanceNum);
+        var createInstanceFutures = new ArrayList<Future<String>>();
+        for (int i = 0; i < numOfInstances; i++) {
+            var createInstanceFuture = executor.submit(() -> {
+                var instanceId = createOneInstance("app-tier-" + instanceNum.incrementAndGet());
+                if (instanceId == null)
+                    logger.error("Failed to create instance");
+                else
+                    logger.info("Created instance " + instanceId);
+                return instanceId;
+            });
+            createInstanceFutures.add(createInstanceFuture);
+        }
 
-            //generate id between 1 and 19
-            instanceNum++;
-
-            if(instanceId == null)
-                logger.error("Failed to create instance");
-            else
-                logger.info("Created instance " + instanceId);
+        for (Future<String> createInstanceFuture : createInstanceFutures) {
+            try {
+                createInstanceFuture.get();
+            } catch (InterruptedException | ExecutionException e) {
+                logger.error("Exception", e);
+            }
         }
     }
 
