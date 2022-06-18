@@ -20,9 +20,11 @@ public class ClassifyController {
 
     final SqsSender sqsSender;
     final S3Repository s3Repository;
-    public ClassifyController(S3Repository s3Repository, SqsSender sqsSender) {
+    private final Ec2Monitor ec2Monitor;
+    public ClassifyController(S3Repository s3Repository, SqsSender sqsSender, Ec2Monitor ec2Monitor) {
         this.s3Repository = s3Repository;
         this.sqsSender = sqsSender;
+        this.ec2Monitor = ec2Monitor;
     }
 
     @RequestMapping("/")

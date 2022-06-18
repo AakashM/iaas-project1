@@ -2,14 +2,12 @@ package com.iaas.project1.webtier;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.amazonaws.services.sqs.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -21,14 +19,12 @@ public class SqsSender {
     private static final Logger logger = LoggerFactory.getLogger(SqsSender.class);
     private final AmazonSQS sqs;
     private final AwsProperties awsProperties;
-    private final Ec2Monitor ec2Monitor;
     private final Map<String, CompletableFuture<String>> pendingRequests;
     private final Thread pollThread;
 
     //create SQS Client instance
-    public SqsSender(AwsProperties awsProperties, Ec2Monitor ec2Monitor) {
+    public SqsSender(AwsProperties awsProperties) {
         this.awsProperties = awsProperties;
-        this.ec2Monitor = ec2Monitor;
         this.pendingRequests = new ConcurrentHashMap<>();
 
         var builder = AmazonSQSClient.builder();
@@ -82,6 +78,11 @@ public class SqsSender {
 
 //        logger.info("message sent to the request queue: {}", message);
         return future.get();
+    }
+
+    public int getSqsQueueSize() {
+        GetQueueAttributesResult attributes = sqs.getQueueAttributes(awsProperties.requestQueueUrl(), Collections.singletonList("ApproximateNumberOfMessages"));
+        return Integer.parseInt(attributes.getAttributes().get("ApproximateNumberOfMessages")); // use the sqs sdk to get the queue size from aws
     }
 
 }
