@@ -15,14 +15,14 @@ public class Ec2Monitor {
 
     private static final Logger logger = LoggerFactory.getLogger(Ec2Monitor.class);
     private final Thread pollThread;
-    int oldRequestsSize = 0;
+//    int oldRequestsSize = 0;
     private final SqsSender sqsSender;
     private final AwsProperties awsProperties;
     private final AmazonEC2 ec2;
 
     private int instanceNum = 1;
 
-    private String instanceId;
+//    private String instanceId;
 
 
     public Ec2Monitor(SqsSender sqsSender, AwsProperties awsProperties) {
@@ -43,15 +43,16 @@ public class Ec2Monitor {
         while(true) {
             // Get size from sqs queue
             try {
-                var newRequestsSize = sqsSender.getSqsQueueSize(); // this size is fetched from queue
+                var queueSize = sqsSender.getSqsQueueSize(); // this size is fetched from queue
                 int numOfRunningInstances = getCountOfRunningInstances();
-                if(oldRequestsSize == 0 && newRequestsSize > 0) {
-                    int numOfInstancesToCreate = Math.min(newRequestsSize-oldRequestsSize, 20 - numOfRunningInstances);
-                    createInstances(numOfInstancesToCreate);
-                } //else if(oldRequestsSize > 1 && newRequestsSize == 0) {
+//                if(oldRequestsSize == 0 && queueSize > 0) {
+                    int numOfInstancesToCreate = Math.min(queueSize - numOfRunningInstances, 15);
+                    if(numOfInstancesToCreate > 0)
+                        createInstances(numOfInstancesToCreate);
+//                } //else if(oldRequestsSize > 1 && queueSize == 0) {
 //                    terminateInstance(instanceId);
 //                }
-                oldRequestsSize = newRequestsSize;
+//                oldRequestsSize = queueSize;
 
                 Thread.sleep(TimeUnit.SECONDS.toSeconds(2));
             } catch (InterruptedException e) {
