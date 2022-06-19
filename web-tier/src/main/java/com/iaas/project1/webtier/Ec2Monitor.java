@@ -102,11 +102,6 @@ public class Ec2Monitor {
                 .withTags(new Tag("Name", instanceName));
         ec2.createTags(createTagsRequest);
 
-        // Starting the Instance
-        StartInstancesRequest startInstancesRequest = new StartInstancesRequest().withInstanceIds(instanceId);
-
-        ec2.startInstances(startInstancesRequest);
-
         return instanceId;
     }
 
