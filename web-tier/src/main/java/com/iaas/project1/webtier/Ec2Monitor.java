@@ -60,25 +60,26 @@ public class Ec2Monitor {
 
     private void createInstances(int numOfInstances) {
         var createInstanceFutures = new ArrayList<Future<String>>();
-        for (int i = 0; i < numOfInstances; i++) {
-            var createInstanceFuture = executor.submit(() -> {
-                var instanceId = createOneInstance("app-tier-" + instanceNum.incrementAndGet());
-                if (instanceId == null)
-                    logger.error("Failed to create instance");
-                else
-                    logger.info("Created instance " + instanceId);
-                return instanceId;
-            });
-            createInstanceFutures.add(createInstanceFuture);
-        }
-
-        for (Future<String> createInstanceFuture : createInstanceFutures) {
-            try {
-                createInstanceFuture.get();
-            } catch (InterruptedException | ExecutionException e) {
-                logger.error("Exception", e);
-            }
-        }
+        logger.info("Requested number of instances "+numOfInstances);
+//        for (int i = 0; i < numOfInstances; i++) {
+//            var createInstanceFuture = executor.submit(() -> {
+//                var instanceId = createOneInstance("app-tier-" + instanceNum.incrementAndGet());
+//                if (instanceId == null)
+//                    logger.error("Failed to create instance");
+//                else
+//                    logger.info("Created instance " + instanceId);
+//                return instanceId;
+//            });
+//            createInstanceFutures.add(createInstanceFuture);
+//        }
+//
+//        for (Future<String> createInstanceFuture : createInstanceFutures) {
+//            try {
+//                createInstanceFuture.get();
+//            } catch (InterruptedException | ExecutionException e) {
+//                logger.error("Exception", e);
+//            }
+//        }
     }
 
     private String createOneInstance(String instanceName) {
@@ -132,8 +133,9 @@ public class Ec2Monitor {
         for(Reservation r : result.getReservations()) {
             //count += r.getInstances().size();
             for (Instance instance : r.getInstances()) {
-                if (instance.getTags().get(0).getValue().contains("app-tier")) {
-                    count++;
+                for (Tag tag : instance.getTags()) {
+                    if(tag.getKey()=="Name" && tag.getValue().contains("app-tier"))
+                        count++;
                 }
             }
         }
