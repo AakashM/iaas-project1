@@ -22,10 +22,11 @@ public class Ec2Monitor {
     private final AwsProperties awsProperties;
     private final AmazonEC2 ec2;
 
-    private AtomicInteger instanceNum = new AtomicInteger(0);
+    //private AtomicInteger instanceNum = new AtomicInteger(0);
+    private int instanceNum = 1;
 
 //    private String instanceId;
-    ExecutorService executor = Executors.newFixedThreadPool(15);
+    //ExecutorService executor = Executors.newFixedThreadPool(15);
 
     public Ec2Monitor(SqsSender sqsSender, AwsProperties awsProperties) {
         this.sqsSender = sqsSender;
@@ -59,8 +60,18 @@ public class Ec2Monitor {
     }
 
     private void createInstances(int numOfInstances) {
-        var createInstanceFutures = new ArrayList<Future<String>>();
         logger.info("Requested number of instances "+numOfInstances);
+        for(int i=0;i<numOfInstances;i++) {
+            String instanceId = createOneInstance("app-tier-" + instanceNum);
+
+            //generate id between 1 and 19
+            instanceNum++;
+            if (instanceId == null)
+                logger.error("Failed to create instance");
+            else
+                logger.info("Created instance " + instanceId);
+        }
+//        var createInstanceFutures = new ArrayList<Future<String>>();
 //        for (int i = 0; i < numOfInstances; i++) {
 //            var createInstanceFuture = executor.submit(() -> {
 //                var instanceId = createOneInstance("app-tier-" + instanceNum.incrementAndGet());
@@ -102,6 +113,10 @@ public class Ec2Monitor {
                 .withResources(instance.getInstanceId())
                 .withTags(new Tag("Name", instanceName));
         ec2.createTags(createTagsRequest);
+
+        // Starting the Instance
+        StartInstancesRequest startInstancesRequest = new StartInstancesRequest().withInstanceIds(instanceId);
+        ec2.startInstances(startInstancesRequest);
 
         return instanceId;
     }
