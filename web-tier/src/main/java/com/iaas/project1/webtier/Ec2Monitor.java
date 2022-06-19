@@ -53,7 +53,7 @@ public class Ec2Monitor {
 
                 Thread.sleep(TimeUnit.SECONDS.toSeconds(2));
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                logger.error("Interrupted: ", e);
             }
         }
     }
@@ -134,8 +134,9 @@ public class Ec2Monitor {
             //count += r.getInstances().size();
             for (Instance instance : r.getInstances()) {
                 for (Tag tag : instance.getTags()) {
-                    if(tag.getKey()=="Name" && tag.getValue().contains("app-tier"))
+                    if(tag.getKey().equals("Name") && tag.getValue().contains("app-tier"))
                         count++;
+                    break;
                 }
             }
         }

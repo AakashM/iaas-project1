@@ -1,0 +1,1 @@
+ python multithread_workload_generator.py --num_request 50 --url 'http://3.228.132.166:3000' --image_folder "imagenet-100/"
