@@ -47,6 +47,9 @@ public class Ec2Monitor {
             // Get size from sqs queue
             try {
                 var queueSize = sqsSender.getSqsQueueSize(); // this size is fetched from queue
+                var inflightMessages = 0;
+                logger.info("Total Queue size: {}, Inflight messages: {}", queueSize, inflightMessages);
+
                 int numOfRunningInstances = getCountOfRunningInstances();
                     int numOfInstancesToCreate = Math.min(queueSize, 15) - numOfRunningInstances;
                     if(numOfInstancesToCreate > 0)
